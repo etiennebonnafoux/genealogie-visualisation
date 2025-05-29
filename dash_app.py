@@ -1,27 +1,38 @@
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+import plotly.express as px
+import polars as pl
+from dash import dcc, html
+
+from read_data import df_place
+from utils import dms_to_dd
 
 # for deployment, pass app.server (which is the actual flask app) to WSGI etc
 app = dash.Dash()
 
-app.layout = html.Div(children=[
-    html.H1(children='Hello Dash'),
+print(df_place.columns)
 
-    html.Div(children='''
-        Dash: A web application framework for Python.
-    '''),
+df_place = df_place.with_columns(
+    pl.col("lat").map_elements(dms_to_dd, return_dtype=pl.Float32).alias("latitude")
+)
+df_place = df_place.with_columns(
+    pl.col("long").map_elements(dms_to_dd, return_dtype=pl.Float32).alias("longitude")
+)
+print(df_place.columns)
 
-    dcc.Graph(
-        id='example-graph',
-        figure={
-            'data': [
-                {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
-                {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': u'Montréal'},
-            ],
-            'layout': {
-                'title': 'Dash Data Visualization'
-            }
-        }
-    )
-])
+app.layout = html.Div(
+    [
+        html.H1("Place Locations on World Map"),
+        dcc.Graph(
+            id="world-map",
+            figure=px.scatter_map(
+                df_place, lat="latitude", lon="longitude", zoom=3, height=600
+            )
+            .update_layout(mapbox_style="open-street-map")
+            .update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}),
+        ),
+    ]
+)
+
+
+if __name__ == "__main__":
+    app.run()
