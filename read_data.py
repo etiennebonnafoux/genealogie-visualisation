@@ -1,7 +1,7 @@
 import sqlite3
 
 from utils import dms_to_dd
-import polars as pl
+import pandas as pd
 
 db_uri = "sqlite.db"
 
@@ -16,7 +16,7 @@ def read_place(db_uri: str = db_uri) -> list[tuple[float, float]]:
     return locations
 
 places = read_place()
-places_pl = pl.from_dict({"lat":[x[1] for x in places],"lon":[x[0] for x in places]})
+places_pl = pd.DataFrame.from_dict({"lat":[x[1] for x in places],"lon":[x[0] for x in places]})
 
 if __name__ == "__main__":
     read_place(db_uri)
