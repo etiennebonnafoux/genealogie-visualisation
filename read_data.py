@@ -1,14 +1,22 @@
+import sqlite3
+
+from utils import dms_to_dd
 import polars as pl
 
-db_uri = "sqlite://sqlite.db"
+db_uri = "sqlite.db"
 
 
-df_family = pl.read_database_uri(query="SELECT * FROM family", uri=db_uri)
-df_person = pl.read_database_uri(query="SELECT * FROM person", uri=db_uri)
-df_place = pl.read_database_uri(query="SELECT * FROM place", uri=db_uri)
+def read_place(db_uri: str = db_uri) -> list[tuple[float, float]]:
+    """Return the list of location with their coordinate"""
+    con = sqlite3.connect(db_uri)
+    cur = con.cursor()
+    cur.execute("SELECT long,lat FROM place")
+    res = cur.fetchall()
+    locations = [(dms_to_dd(long_str), dms_to_dd(lat_str)) for long_str, lat_str in res]
+    return locations
 
+places = read_place()
+places_pl = pl.from_dict({"lat":[x[1] for x in places],"lon":[x[0] for x in places]})
 
 if __name__ == "__main__":
-    print(df_family.head())
-    print(df_person.head())
-    print(df_place.head())
+    read_place(db_uri)
